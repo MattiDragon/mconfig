@@ -1,0 +1,5 @@
+{
+  "mconfig.unknown_config": "Error: Unknown config, it could be of an other type!",
+  "mconfig.reload_fail": "Error while reloading config, please check the logs!",
+  "mconfig.reload_success": "Successfully reloaded config!"
+}

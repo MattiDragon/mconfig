@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "mconfig",
+  "version": "${version}",
+  "name": "Mconfig",
+  "description": "Config Library",
+  "authors": [
+    "MattiDragob"
+  ],
+  "contact": {
+    "sources": "https://github.com/MattiDragon/mconfig"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "io.github.mattidragon.mconfig.MconfigClient"
+    ],
+    "main": [
+      "io.github.mattidragon.mconfig.Mconfig"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.1",
+    "fabric": "*",
+    "minecraft": "1.18.2"
+  }
+}
