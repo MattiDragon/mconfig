@@ -9,9 +9,11 @@ import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ApiStatus.Internal
 public class Mconfig implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(Mconfig.class);
     
@@ -31,11 +33,9 @@ public class Mconfig implements ModInitializer {
                                                     context.getSource().sendError(new TranslatableText("mconfig.unknown_config"));
                                                     return 0;
                                                 }
-                                                try {
-                                                    config.load();
-                                                } catch (RuntimeException e) {
+                                                
+                                                if (!config.load()) {
                                                     context.getSource().sendError(new TranslatableText("mconfig.reload_fail"));
-                                                    LOGGER.error("Config reload failed!", e);
                                                     return 0;
                                                 }
                                                 context.getSource().sendFeedback(new TranslatableText("mconfig.reload_success"), true);
@@ -48,9 +48,7 @@ public class Mconfig implements ModInitializer {
     private RequiredArgumentBuilder<ServerCommandSource, String> configArgument(String id) {
         return CommandManager.argument(id, StringArgumentType.word())
                 .suggests((context, builder) -> {
-                    ConfigManager.SERVER_CONFIGS.forEach(config -> {
-                        builder.suggest(config.id);
-                    });
+                    ConfigManager.SERVER_CONFIGS.forEach(config -> builder.suggest(config.id));
                     return builder.buildFuture();
                 });
     }

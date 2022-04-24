@@ -11,7 +11,9 @@ import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 @Environment(EnvType.CLIENT)
 public class MconfigClient implements ClientModInitializer {
     @Override
@@ -45,9 +47,7 @@ public class MconfigClient implements ClientModInitializer {
     private RequiredArgumentBuilder<FabricClientCommandSource, String> configArgument(String id) {
         return ClientCommandManager.argument(id, StringArgumentType.word())
                 .suggests((context, builder) -> {
-                    ConfigManager.CLIENT_CONFIGS.forEach(config -> {
-                        builder.suggest(config.id);
-                    });
+                    ConfigManager.CLIENT_CONFIGS.forEach(config -> builder.suggest(config.id));
                     return builder.buildFuture();
                 });
     }

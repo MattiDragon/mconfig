@@ -1,18 +1,16 @@
 package io.github.mattidragon.mconfig.config;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class ConfigManager {
-    public static final List<Config<?>> CLIENT_CONFIGS = new ArrayList<>();
-    public static final List<Config<?>> COMMON_CONFIGS = new ArrayList<>();
-    public static final List<Config<?>> SERVER_CONFIGS = new ArrayList<>();
-    public static final ImmutableMap<ConfigType, List<Config<?>>> LOOKUP = Maps.immutableEnumMap(Map.of(ConfigType.COMMON, COMMON_CONFIGS, ConfigType.SERVER, SERVER_CONFIGS, ConfigType.CLIENT, CLIENT_CONFIGS));
+public final class ConfigManager {
+    public static final List<Config<?>> CLIENT_CONFIGS;
+    public static final List<Config<?>> COMMON_CONFIGS;
+    public static final List<Config<?>> SERVER_CONFIGS;
+    private static final ImmutableMap<ConfigType, List<Config<?>>> LOOKUP;
+    
+    private ConfigManager(){}
     
     public static <T extends Record> Config<T> register(ConfigType type, String id, T defaults) {
         var group = LOOKUP.get(type);
@@ -23,7 +21,7 @@ public class ConfigManager {
                 // Just checked the actual type
                 //noinspection unchecked
                 return (Config<T>) existing.get();
-            throw new IllegalStateException("Config registered twice with different options!");
+            throw new IllegalStateException("Config registered twice with different options for same type!");
         }
         
         // All record classes are final so the class has to match
@@ -33,4 +31,13 @@ public class ConfigManager {
         return config;
     }
     
+    static {
+        var client = new ArrayList<Config<?>>();
+        CLIENT_CONFIGS = Collections.unmodifiableList(client);
+        var common = new ArrayList<Config<?>>();
+        COMMON_CONFIGS = Collections.unmodifiableList(common);
+        var server = new ArrayList<Config<?>>();
+        SERVER_CONFIGS = Collections.unmodifiableList(server);
+        LOOKUP = Maps.immutableEnumMap(Map.of(ConfigType.COMMON, common, ConfigType.SERVER, server, ConfigType.CLIENT, client));
+    }
 }
