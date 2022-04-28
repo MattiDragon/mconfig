@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.github.mattidragon.mconfig.config.ConfigManager;
 import io.github.mattidragon.mconfig.config.ConfigType;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
@@ -23,6 +24,7 @@ public class Mconfig implements ModInitializer {
             dispatcher.register(CommandManager.literal("mconfig")
                     .then(CommandManager.literal("reload")
                                     .then(configArgument("id")
+                                            .requires(Permissions.require("mconfig.reload", 3))
                                             .executes(context -> {
                                                 var config = ConfigManager.SERVER_CONFIGS.stream()
                                                         .filter(config1 -> config1.id.equals(StringArgumentType.getString(context, "id")))

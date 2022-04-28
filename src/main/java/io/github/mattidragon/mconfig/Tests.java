@@ -19,5 +19,5 @@ public class Tests {
     
     public record SimpleConfig(@Comment("Testing") String thingName, int thingSpeed, boolean thingEnabled) {}
     
-    public record ComplexConfig(short shortBoy, double bigboy, @Comment("very mush") String aaaa, TriState state) {}
+    public record ComplexConfig(short shortBoy, double bigboy, @Comment("very \n\n mush") String aaaa, TriState state) {}
 }

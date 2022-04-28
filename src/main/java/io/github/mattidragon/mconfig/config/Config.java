@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public final class Config<T extends Record> {
     public final Class<T> clazz;
@@ -38,7 +39,7 @@ public final class Config<T extends Record> {
     
     /**
      * Reloads the config from disk and replaces any missing keys.
-     * @return Whether the reload was successful. If not an error will be logged.
+     * @return Whether the reload was successful. If not, an error will be logged.
      */
     public boolean load() {
         try {
@@ -77,7 +78,9 @@ public final class Config<T extends Record> {
         for (var component : clazz.getRecordComponents()) {
             try {
                 var comment = component.getAnnotation(Comment.class);
-                if (comment != null) properties.appendEntry(new BasicEntry("# " + comment.value() + "\n"));
+                if (comment != null) properties.appendEntry(new BasicEntry(Arrays.stream(comment.value().split("\\n"))
+                        .map(s -> "# " + s)
+                        .collect(Collectors.joining("\n", "", "\n"))));
                 var componentValue = serializeField(component.getType(), component.getAccessor().invoke(config));
                 
                 properties.set(component.getName(), componentValue);

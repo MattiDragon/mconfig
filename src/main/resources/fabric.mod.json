@@ -10,6 +10,11 @@
   "contact": {
     "sources": "https://github.com/MattiDragon/mconfig"
   },
+  "custom": {
+    "modmenu": {
+      "badges": [ "library" ]
+    }
+  },
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
