@@ -19,10 +19,10 @@
   "environment": "*",
   "entrypoints": {
     "client": [
-      "io.github.mattidragon.mconfig.MconfigClient"
+      "io.github.mattidragon.mconfig.internal.MconfigClient"
     ],
     "main": [
-      "io.github.mattidragon.mconfig.Mconfig"
+      "io.github.mattidragon.mconfig.internal.Mconfig"
     ]
   },
   "depends": {

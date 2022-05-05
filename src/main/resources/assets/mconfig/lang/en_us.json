@@ -1,5 +1,6 @@
 {
   "mconfig.unknown_config": "Error: Unknown config!",
   "mconfig.reload_fail": "Error while reloading config, please check the logs!",
+  "mconfig.non_reloadable": "That config cannot be reloaded. Restart the game to apply changes.",
   "mconfig.reload_success": "Successfully reloaded config!"
 }

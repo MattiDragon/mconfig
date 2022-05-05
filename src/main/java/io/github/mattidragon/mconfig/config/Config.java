@@ -2,9 +2,12 @@ package io.github.mattidragon.mconfig.config;
 
 import de.poiu.apron.PropertyFile;
 import de.poiu.apron.entry.BasicEntry;
-import io.github.mattidragon.mconfig.Mconfig;
+import io.github.mattidragon.mconfig.internal.Mconfig;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +24,7 @@ public final class Config<T extends Record> {
     public final String id;
     public final ConfigType type;
     public final T defaults;
+    public final boolean reloadable;
     private @Nullable T value = null;
     
     Config(Class<T> clazz, String id, ConfigType type, T defaults) {
@@ -28,6 +32,7 @@ public final class Config<T extends Record> {
         this.id = id;
         this.type = type;
         this.defaults = defaults;
+        this.reloadable = clazz.getAnnotation(NonReloadable.class) != null;
     }
     
     public T get() {
@@ -40,8 +45,10 @@ public final class Config<T extends Record> {
     /**
      * Reloads the config from disk and replaces any missing keys.
      * @return Whether the reload was successful. If not, an error will be logged.
+     * @throws IllegalStateException if this config is non-reloadable and already loaded
      */
     public boolean load() {
+        if (!reloadable && value != null) throw new IllegalStateException("Attempted to reload non-reloadable config " + this);
         try {
             var configDir = FabricLoader.getInstance().getConfigDir().resolve(id);
             var file = (switch (type) {
@@ -56,40 +63,46 @@ public final class Config<T extends Record> {
             } else value = this.defaults;
     
             file.getParentFile().mkdirs();
-            //noinspection ConstantConditions
             var properties = serialize(value);
             properties.saveTo(file);
         } catch (ConfigException e) {
-            Mconfig.LOGGER.error("Config (re)loading failed for " + id + "/" + type.name().toLowerCase() + ", using defaults!", e);
+            Mconfig.LOGGER.error("Config (re)loading failed for " + this + ", using defaults!", e);
             value = defaults;
             return false;
         } catch (RuntimeException e) {
-            Mconfig.LOGGER.error("Config (re)loading failed for " + id + "/" + type.name().toLowerCase() + " due to an unexpected error, using defaults!", e);
+            Mconfig.LOGGER.error("Config (re)loading failed for " + this + " due to an unexpected error, using defaults!", e);
             value = defaults;
             return false;
         }
         return true;
     }
     
-    private PropertyFile serialize(Record config) {
-        var clazz = config.getClass();
+    private PropertyFile serialize(T config) {
         var properties = new PropertyFile();
+    
+        var classComment = clazz.getAnnotation(Comment.class);
+        if (classComment != null)
+            properties.appendEntry(createCommentEntry(classComment.value()));
         
         for (var component : clazz.getRecordComponents()) {
             try {
                 var comment = component.getAnnotation(Comment.class);
-                if (comment != null) properties.appendEntry(new BasicEntry(Arrays.stream(comment.value().split("\\n"))
-                        .map(s -> "# " + s)
-                        .collect(Collectors.joining("\n", "", "\n"))));
-                var componentValue = serializeField(component.getType(), component.getAccessor().invoke(config));
+                if (comment != null) properties.appendEntry(createCommentEntry(comment.value()));
                 
-                properties.set(component.getName(), componentValue);
+                properties.set(component.getName(), serializeField(component.getType(), component.getAccessor().invoke(config)));
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new ConfigException("Error while serializing config!", e);
             }
         }
         
         return properties;
+    }
+    
+    @NotNull
+    private BasicEntry createCommentEntry(String comment) {
+        return new BasicEntry(Arrays.stream(comment.split("\\n"))
+                .map(s -> "# " + s)
+                .collect(Collectors.joining("\n", "", "\n")));
     }
     
     private boolean deserialize(PropertyFile config) {
@@ -103,7 +116,7 @@ public final class Config<T extends Record> {
                     values.add(component.getAccessor().invoke(defaults));
                     continue;
                 }
-                values.add(deserializeField(component.getType(), config.get(name), component.getName()));
+                values.add(deserializeField(component, config.get(name)));
             }
             
             // Safe because constructors produce objects of their class
@@ -128,28 +141,33 @@ public final class Config<T extends Record> {
     
         if (clazz == String.class) return (String) value;
     
+        if (clazz == RegistryKey.class) return ((RegistryKey<?>)value).getValue().toString();
+        if (clazz == TagKey.class) return ((TagKey<?>)value).id().toString();
+        
         if (clazz.isEnum()) return ((Enum<?>)value).name();
     
         throw new ConfigException("Unsupported config field type " + clazz.getSimpleName() + "!");
     }
     
-    @SuppressWarnings("unchecked") // Lots of casts based on class object checks. Should all be safe
-    private <F> F deserializeField(Class<F> clazz, String value, String fieldName) {
-        if (clazz == String.class) return (F) value;
+    private Object deserializeField(RecordComponent component, String value) {
+        var clazz = component.getType();
+        var fieldName = component.getName();
+        
+        if (clazz == String.class) return value;
         
         if (clazz == boolean.class || clazz == Boolean.class) {
-            if ("true".equalsIgnoreCase(value)) return (F) Boolean.TRUE;
-            if ("false".equalsIgnoreCase(value)) return (F) Boolean.FALSE;
+            if ("true".equalsIgnoreCase(value)) return Boolean.TRUE;
+            if ("false".equalsIgnoreCase(value)) return Boolean.FALSE;
             throw createException(fieldName, "a boolean", value);
         }
     
         try {
-            if (clazz == byte.class || clazz == Byte.class) return (F) Byte.valueOf(value);
-            if (clazz == short.class || clazz == Short.class) return (F) Short.valueOf(value);
-            if (clazz == int.class || clazz == Integer.class) return (F) Integer.valueOf(value);
-            if (clazz == long.class || clazz == Long.class) return (F) Long.valueOf(value);
-            if (clazz == float.class || clazz == Float.class) return (F) Float.valueOf(value);
-            if (clazz == double.class || clazz == Double.class) return (F) Double.valueOf(value);
+            if (clazz == byte.class || clazz == Byte.class) return Byte.valueOf(value);
+            if (clazz == short.class || clazz == Short.class) return Short.valueOf(value);
+            if (clazz == int.class || clazz == Integer.class) return Integer.valueOf(value);
+            if (clazz == long.class || clazz == Long.class) return Long.valueOf(value);
+            if (clazz == float.class || clazz == Float.class) return Float.valueOf(value);
+            if (clazz == double.class || clazz == Double.class) return Double.valueOf(value);
         } catch (NumberFormatException e) {
             throw createException(fieldName, "a valid " + clazz.getSimpleName().toLowerCase(), value);
         }
@@ -157,11 +175,33 @@ public final class Config<T extends Record> {
         if (clazz == Identifier.class) {
             var id = Identifier.tryParse(fieldName);
             if (id == null) throw createException(fieldName, "a valid identifier", value);
-            return (F) id;
+            return id;
+        }
+        
+        if (clazz == RegistryKey.class) {
+            var annotation = component.getAnnotation(RegistryMember.class);
+            if (annotation == null) throw new ConfigException("Expected " + fieldName + " to have a @RegistryMember annotation!");
+            var registryId = Identifier.tryParse(annotation.value());
+            if (registryId == null) throw new ConfigException("Expected @RegistryMember annotation on " + fieldName + " to have a valid identifier!");
+            if (!Registry.REGISTRIES.containsId(registryId)) throw new ConfigException("Expected @RegistryMember annotation on " + fieldName + "to point to a valid registry!");
+            var id = Identifier.tryParse(value);
+            if (id == null) throw createException(fieldName, "a valid identifier", value);
+            return RegistryKey.of(RegistryKey.ofRegistry(registryId), id);
+        }
+        
+        if (clazz == TagKey.class) {
+            var annotation = component.getAnnotation(RegistryMember.class);
+            if (annotation == null) throw new ConfigException("Expected " + fieldName + " to have a @RegistryMember annotation!");
+            var registryId = Identifier.tryParse(annotation.value());
+            if (registryId == null) throw new ConfigException("Expected @RegistryMember annotation on " + fieldName + " to have a valid identifier!");
+            if (!Registry.REGISTRIES.containsId(registryId)) throw new ConfigException("Expected @RegistryMember annotation on " + fieldName + "to point to a valid registry!");
+            var id = Identifier.tryParse(value);
+            if (id == null) throw createException(fieldName, "a valid identifier", value);
+            return TagKey.of(RegistryKey.ofRegistry(registryId), id);
         }
         
         if (clazz.isEnum()) {
-            for (F constant : clazz.getEnumConstants()) {
+            for (var constant : clazz.getEnumConstants()) {
                 if (((Enum<?>) constant).name().equalsIgnoreCase(value)) {
                     return constant;
                 }
@@ -189,5 +229,10 @@ public final class Config<T extends Record> {
             else error.append(", ");
         }
         return error;
+    }
+    
+    @Override
+    public String toString() {
+        return id + "/" + type.name().toLowerCase();
     }
 }

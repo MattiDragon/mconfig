@@ -1,15 +1,13 @@
-package io.github.mattidragon.mconfig;
+package io.github.mattidragon.mconfig.internal;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.github.mattidragon.mconfig.config.ConfigManager;
-import io.github.mattidragon.mconfig.config.ConfigType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.text.TranslatableText;
 import org.jetbrains.annotations.ApiStatus;
 
