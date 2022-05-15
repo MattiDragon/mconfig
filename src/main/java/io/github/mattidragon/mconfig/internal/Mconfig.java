@@ -26,10 +26,10 @@ public class Mconfig implements ModInitializer {
     public void onInitialize() {
         CommandRegistrationCallback.EVENT.register(((dispatcher, dedicated) -> {
             dispatcher.register(literal("mconfig")
+                    .requires(Permissions.require("mconfig.reload", 3))
                     .then(literal("reload")
                             .then(literal("server")
                                     .then(configArgument("id", ConfigManager.SERVER_CONFIGS)
-                                            .requires(Permissions.require("mconfig.reload", 3))
                                             .executes(context -> {
                                                 var config = ConfigManager.SERVER_CONFIGS.stream()
                                                         .filter(config1 -> config1.id.equals(StringArgumentType.getString(context, "id")))
@@ -56,7 +56,7 @@ public class Mconfig implements ModInitializer {
                                             })))
                             .then(literal("common")
                                     .then(configArgument("id", ConfigManager.COMMON_CONFIGS)
-                                            .requires(Permissions.require("mconfig.reload", 3))
+                                            
                                             .executes(context -> {
                                                 var config = ConfigManager.COMMON_CONFIGS.stream()
                                                         .filter(config1 -> config1.id.equals(StringArgumentType.getString(context, "id")))
