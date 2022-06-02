@@ -1,6 +1,9 @@
 # Mconfig
 Mconfig is a simple configuration api made for MattiDragons mods. 
 
+**WARNING: mconfig 1.x for minecraft 1.19 is only temporarily supported. It will be replaced by 
+mconfig 2.x in the future**
+
 ## Usage
 Get it with jitpack.
 

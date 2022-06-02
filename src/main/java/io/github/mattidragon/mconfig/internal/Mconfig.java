@@ -6,10 +6,10 @@ import io.github.mattidragon.mconfig.config.Config;
 import io.github.mattidragon.mconfig.config.ConfigManager;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class Mconfig implements ModInitializer {
     
     @Override
     public void onInitialize() {
-        CommandRegistrationCallback.EVENT.register(((dispatcher, dedicated) -> {
+        CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             dispatcher.register(literal("mconfig")
                     .requires(Permissions.require("mconfig.reload", 3))
                     .then(literal("reload")
@@ -37,21 +37,21 @@ public class Mconfig implements ModInitializer {
                                                         .orElse(null);
                                                 
                                                 if (config == null) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.unknown_config"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.unknown_config"));
                                                     return 0;
                                                 }
     
                                                 if (!config.reloadable) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.non_reloadable"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.non_reloadable"));
                                                     return 0;
                                                 }
                                                 
                                                 if (!config.load()) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.reload_fail"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.reload_fail"));
                                                     return 0;
                                                 }
                                                 
-                                                context.getSource().sendFeedback(new TranslatableText("mconfig.reload_success"), true);
+                                                context.getSource().sendFeedback(Text.translatable("mconfig.reload_success"), true);
                                                 return 1;
                                             })))
                             .then(literal("common")
@@ -64,21 +64,21 @@ public class Mconfig implements ModInitializer {
                                                         .orElse(null);
                                                 
                                                 if (config == null) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.unknown_config"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.unknown_config"));
                                                     return 0;
                                                 }
                                                 
                                                 if (!config.reloadable) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.non_reloadable"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.non_reloadable"));
                                                     return 0;
                                                 }
                                                 
                                                 if (!config.load()) {
-                                                    context.getSource().sendError(new TranslatableText("mconfig.reload_fail"));
+                                                    context.getSource().sendError(Text.translatable("mconfig.reload_fail"));
                                                     return 0;
                                                 }
                                                 
-                                                context.getSource().sendFeedback(new TranslatableText("mconfig.reload_success"), true);
+                                                context.getSource().sendFeedback(Text.translatable("mconfig.reload_success"), true);
                                                 return 1;
                                             })))));
         }));
